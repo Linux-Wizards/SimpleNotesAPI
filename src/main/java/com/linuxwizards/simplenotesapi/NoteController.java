@@ -10,7 +10,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/notes")
 class NoteController {
     @GetMapping("/{requestedId}")
-    private ResponseEntity<String> findById() {
-        return ResponseEntity.ok("{}");
+    private ResponseEntity<Note> findById(@PathVariable Long requestedId) {
+        if (requestedId.equals(99L)) {
+            Note note = new Note(99L, "This is a title", "This is a note");
+            return ResponseEntity.ok(note);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

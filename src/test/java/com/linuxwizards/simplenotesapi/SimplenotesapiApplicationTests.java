@@ -21,5 +21,24 @@ class SimplenotesapiApplicationTests {
 		ResponseEntity<String> response = restTemplate.getForEntity("/notes/99", String.class);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+
+		Number id = documentContext.read("$.id");
+		assertThat(id).isEqualTo(99);
+
+		String title = documentContext.read("$.title");
+		assertThat(title).isEqualTo("This is a title");
+
+		String content = documentContext.read("$.content");
+		assertThat(content).isEqualTo("This is a note");
+	}
+
+	@Test
+	void shouldNotReturnANoteWithAnUnknownId() {
+		ResponseEntity<String> response = restTemplate.getForEntity("/notes/1000", String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		assertThat(response.getBody()).isBlank();
 	}
 }
