@@ -19,7 +19,7 @@ class SecurityConfig {
         http
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/notes/**")
-                        .authenticated())
+                        .hasRole("NOTES-USER"))
                 .httpBasic(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable());
         return http.build();
@@ -28,5 +28,23 @@ class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
+    }
+
+    @Bean
+    UserDetailsService testOnlyUsers(PasswordEncoder passwordEncoder) {
+        User.UserBuilder users = User.builder();
+
+        UserDetails sarah = users
+                .username("sarah1")
+                .password(passwordEncoder.encode("abc123"))
+                .roles("NOTES-USER")
+                .build();
+        UserDetails hankCantNote = users
+                .username("hank-cant-note")
+                .password(passwordEncoder.encode("qrs456"))
+                .roles("LOCKED-USER")
+                .build();
+
+        return new InMemoryUserDetailsManager(sarah, hankCantNote);
     }
 }

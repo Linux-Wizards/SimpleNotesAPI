@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Optional;
+import java.security.Principal;
 import java.net.URI;
 import java.util.*;
 
@@ -28,8 +29,8 @@ class NoteController {
 
 
     @GetMapping("/{requestedId}")
-    private ResponseEntity<Note> findById(@PathVariable Long requestedId) {
-        Optional<Note> noteOptional = noteRepository.findById(requestedId);
+    private ResponseEntity<Note> findById(@PathVariable Long requestedId, Principal principal) {
+        Optional<Note> noteOptional = Optional.ofNullable(noteRepository.findByIdAndOwner(requestedId, principal.getName()));
 
         if (noteOptional.isPresent()) {
             return ResponseEntity.ok(noteOptional.get());
@@ -39,8 +40,8 @@ class NoteController {
     }
 
     @GetMapping
-    private ResponseEntity<List<Note>> findAll(Pageable pageable) {
-        Page<Note> page = noteRepository.findAll(
+    private ResponseEntity<List<Note>> findAll(Pageable pageable, Principal principal) {
+        Page<Note> page = noteRepository.findByOwner(principal.getName(),
                 PageRequest.of(
                   pageable.getPageNumber(),
                   pageable.getPageSize(),
@@ -51,8 +52,10 @@ class NoteController {
     }
 
     @PostMapping
-    private ResponseEntity<Void> createNote(@RequestBody Note newNoteRequest, UriComponentsBuilder ucb) {
-        Note savedNote = noteRepository.save(newNoteRequest);
+    private ResponseEntity<Void> createNote(@RequestBody Note newNoteRequest, UriComponentsBuilder ucb, Principal principal) {
+        Note noteWithOwner = new Note(null, newNoteRequest.title(), newNoteRequest.content(), principal.getName());
+        Note savedNote = noteRepository.save(noteWithOwner);
+
         URI locationOfNewNote = ucb
                 .path("notes/{id}")
                 .buildAndExpand(savedNote.id())

@@ -22,7 +22,9 @@ class SimplenotesapiApplicationTests {
 
 	@Test
 	void shouldReturnANoteWhenDataIsSaved() {
-		ResponseEntity<String> response = restTemplate.getForEntity("/notes/99", String.class);
+		ResponseEntity<String> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/notes/99", String.class);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -40,7 +42,9 @@ class SimplenotesapiApplicationTests {
 
 	@Test
 	void shouldNotReturnANoteWithAnUnknownId() {
-		ResponseEntity<String> response = restTemplate.getForEntity("/notes/1000", String.class);
+		ResponseEntity<String> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/notes/1000", String.class);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 		assertThat(response.getBody()).isBlank();
@@ -49,12 +53,16 @@ class SimplenotesapiApplicationTests {
 	@Test
 	@DirtiesContext
 	void shouldCreateANewNote() {
-		Note newNote = new Note(null, "This is created note", "This is created content", "sarah1");
-		ResponseEntity<Void> createResponse = restTemplate.postForEntity("/notes", newNote, Void.class);
+		Note newNote = new Note(null, "This is created note", "This is created content", null);
+		ResponseEntity<Void> createResponse = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.postForEntity("/notes", newNote, Void.class);
 		assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
 		URI locationOfNewNote = createResponse.getHeaders().getLocation();
-		ResponseEntity<String> getResponse = restTemplate.getForEntity(locationOfNewNote, String.class);
+		ResponseEntity<String> getResponse = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.getForEntity(locationOfNewNote, String.class);
 		assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		DocumentContext documentContext = JsonPath.parse(getResponse.getBody());
@@ -71,7 +79,9 @@ class SimplenotesapiApplicationTests {
 	void shouldReturnAllNotesWhenListIsRequested() {
 		// Should return all notes even with paging - default page size is 20
 
-		ResponseEntity<String> response = restTemplate.getForEntity("/notes", String.class);
+		ResponseEntity<String> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/notes", String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		DocumentContext documentContext = JsonPath.parse(response.getBody());
@@ -90,7 +100,9 @@ class SimplenotesapiApplicationTests {
 
 	@Test
 	void shouldReturnAPageOfNotes() {
-		ResponseEntity<String> response = restTemplate.getForEntity("/notes?page=0&size=1", String.class);
+		ResponseEntity<String> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/notes?page=0&size=1", String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		DocumentContext documentContext = JsonPath.parse(response.getBody());
@@ -100,7 +112,9 @@ class SimplenotesapiApplicationTests {
 
 	@Test
 	void shouldReturnASortedPageOfNotes() {
-		ResponseEntity<String> response = restTemplate.getForEntity("/notes?page=0&size=1&sort=id,desc", String.class);
+		ResponseEntity<String> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/notes?page=0&size=1&sort=id,desc", String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		DocumentContext documentContext = JsonPath.parse(response.getBody());
@@ -123,7 +137,9 @@ class SimplenotesapiApplicationTests {
 		Page: 0 (Spring default)
 		 */
 
-		ResponseEntity<String> response = restTemplate.getForEntity("/notes", String.class);
+		ResponseEntity<String> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/notes", String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		DocumentContext documentContext = JsonPath.parse(response.getBody());
@@ -135,5 +151,39 @@ class SimplenotesapiApplicationTests {
 
 		JSONArray contents = documentContext.read("$..content");
 		assertThat(contents).containsExactly("Another note", "Second note", "This is a note");
+	}
+
+	@Test
+	void shouldNotReturnANoteWhenUsingBadCredentials() {
+		ResponseEntity<String> response = restTemplate
+				.withBasicAuth("BAD_USER", "BAD-PASSWORD")
+				.getForEntity("/notes/99", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+		 response = restTemplate
+				.withBasicAuth("BAD-USER", "abc123")
+				.getForEntity("/notes/99", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+		response = restTemplate
+				.withBasicAuth("sarah1", "BAD-PASSWORD")
+				.getForEntity("/notes/99", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	@Test
+	void shouldRejectUsersWhoAreNotNotepadUsers() {
+		ResponseEntity<String> response = restTemplate
+				.withBasicAuth("hank-cant-note", "qrs456")
+				.getForEntity("/notes/99", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+	}
+
+	@Test
+	void shouldNotAllowAccessToNotesTheyDoNotOwn() {
+		ResponseEntity<String> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/notes/102", String.class); // kumar2's note
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 }
