@@ -25,7 +25,7 @@ public class NoteJsonTest {
     void setUp() {
         notes = Arrays.array(
                 new Note(99L, "This is a title", "This is a note"),
-                new Note(100L, "Second title", "Second aaaa note"),
+                new Note(100L, "Second title", "Second note"),
                 new Note(101L, "Another title", "Another note")
         );
     }
@@ -64,5 +64,23 @@ public class NoteJsonTest {
         assertThat(json.parseObject(expected).id()).isEqualTo(99);
         assertThat(json.parseObject(expected).title()).isEqualTo("This is a title");
         assertThat(json.parseObject(expected).content()).isEqualTo("This is a note");
+    }
+
+    @Test
+    void noteListSerializationTest() throws IOException {
+        assertThat(jsonList.write(notes)).isStrictlyEqualToJson("list.json");
+    }
+
+    @Test
+    void noteListDeserializationTest() throws IOException {
+        String expected = """
+         [
+            { "id": 99, "title": "This is a title", "content": "This is a note" },
+            { "id": 100, "title": "Second title", "content": "Second note" },
+            { "id": 101, "title": "Another title", "content": "Another note" }
+         ]
+         """;
+
+        assertThat(jsonList.parse(expected)).isEqualTo(notes);
     }
 }
