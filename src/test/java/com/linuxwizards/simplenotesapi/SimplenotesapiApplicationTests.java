@@ -14,10 +14,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.net.URI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.annotation.DirtiesContext.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 class SimplenotesapiApplicationTests {
 	@Autowired
 	TestRestTemplate restTemplate;
@@ -49,8 +47,9 @@ class SimplenotesapiApplicationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	void shouldCreateANewNote() {
-		Note newNote = new Note(null, "This is second note", "This is second content");
+		Note newNote = new Note(null, "This is created note", "This is created content", "sarah1");
 		ResponseEntity<Void> createResponse = restTemplate.postForEntity("/notes", newNote, Void.class);
 		assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -64,7 +63,77 @@ class SimplenotesapiApplicationTests {
 		String content = documentContext.read("$.content");
 
 		assertThat(id).isNotNull();
-		assertThat(title).isEqualTo("This is second note");
-		assertThat(content).isEqualTo("This is second content");
+		assertThat(title).isEqualTo("This is created note");
+		assertThat(content).isEqualTo("This is created content");
+	}
+
+	@Test
+	void shouldReturnAllNotesWhenListIsRequested() {
+		// Should return all notes even with paging - default page size is 20
+
+		ResponseEntity<String> response = restTemplate.getForEntity("/notes", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		int noteCount = documentContext.read("$.length()");
+		assertThat(noteCount).isEqualTo(3);
+
+		JSONArray ids = documentContext.read("$..id");
+		assertThat(ids).containsExactlyInAnyOrder(99, 100, 101);
+
+		JSONArray titles = documentContext.read("$..title");
+		assertThat(titles).containsExactlyInAnyOrder("This is a title", "Second title", "Another title");
+
+		JSONArray contents = documentContext.read("$..content");
+		assertThat(contents).containsExactlyInAnyOrder("This is a note", "Second note", "Another note");
+	}
+
+	@Test
+	void shouldReturnAPageOfNotes() {
+		ResponseEntity<String> response = restTemplate.getForEntity("/notes?page=0&size=1", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		JSONArray page = documentContext.read("$[*]");
+		assertThat(page.size()).isEqualTo(1);
+	}
+
+	@Test
+	void shouldReturnASortedPageOfNotes() {
+		ResponseEntity<String> response = restTemplate.getForEntity("/notes?page=0&size=1&sort=id,desc", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		JSONArray read = documentContext.read("$[*]");
+		assertThat(read.size()).isEqualTo(1);
+
+		String title = documentContext.read("$[0].title");
+		assertThat(title).isEqualTo("Another title");
+
+		String content = documentContext.read("$[0].content");
+		assertThat(content).isEqualTo("Another note");
+	}
+
+	@Test
+	void shouldReturnASortedPageOfNotesWithNoParametersAndUseDefaultValues() {
+		/*
+		Defaults:
+		Sorting order: id, descending
+		Page size: 20 (Spring default)
+		Page: 0 (Spring default)
+		 */
+
+		ResponseEntity<String> response = restTemplate.getForEntity("/notes", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		JSONArray page = documentContext.read("$[*]");
+		assertThat(page.size()).isEqualTo(3);
+
+		JSONArray titles = documentContext.read("$..title");
+		assertThat(titles).containsExactly("Another title", "Second title", "This is a title");
+
+		JSONArray contents = documentContext.read("$..content");
+		assertThat(contents).containsExactly("Another note", "Second note", "This is a note");
 	}
 }

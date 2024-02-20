@@ -24,9 +24,9 @@ public class NoteJsonTest {
     @BeforeEach
     void setUp() {
         notes = Arrays.array(
-                new Note(99L, "This is a title", "This is a note"),
-                new Note(100L, "Second title", "Second note"),
-                new Note(101L, "Another title", "Another note")
+                new Note(99L, "This is a title", "This is a note", "sarah1"),
+                new Note(100L, "Second title", "Second note", "sarah1"),
+                new Note(101L, "Another title", "Another note", "sarah1")
         );
     }
 
@@ -54,12 +54,13 @@ public class NoteJsonTest {
            {
                "id": 99,
                "title": "This is a title",
-               "content": "This is a note"
+               "content": "This is a note",
+               "owner": "sarah1"
            }
            """;
 
         assertThat(json.parse(expected))
-                .isEqualTo(new Note(99L, "This is a title", "This is a note"));
+                .isEqualTo(new Note(99L, "This is a title", "This is a note", "sarah1"));
 
         assertThat(json.parseObject(expected).id()).isEqualTo(99);
         assertThat(json.parseObject(expected).title()).isEqualTo("This is a title");
@@ -75,9 +76,9 @@ public class NoteJsonTest {
     void noteListDeserializationTest() throws IOException {
         String expected = """
          [
-            { "id": 99, "title": "This is a title", "content": "This is a note" },
-            { "id": 100, "title": "Second title", "content": "Second note" },
-            { "id": 101, "title": "Another title", "content": "Another note" }
+            { "id": 99, "title": "This is a title", "content": "This is a note", "owner": "sarah1" },
+            { "id": 100, "title": "Second title", "content": "Second note", "owner": "sarah1" },
+            { "id": 101, "title": "Another title", "content": "Another note", "owner": "sarah1" }
          ]
          """;
 
