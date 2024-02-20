@@ -1,5 +1,6 @@
 package com.linuxwizards.simplenotesapi;
 
-record Note(Long id, String title, String content) {
+import org.springframework.data.annotation.Id;
 
+record Note(@Id Long id, String title, String content) {
 }
