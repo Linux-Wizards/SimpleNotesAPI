@@ -16,10 +16,17 @@ repositories {
 }
 
 dependencies {
+	// Base
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// Data
 	implementation 'org.springframework.data:spring-data-jdbc'
 	implementation 'com.h2database:h2'
 
+	// Security
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	// Testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
