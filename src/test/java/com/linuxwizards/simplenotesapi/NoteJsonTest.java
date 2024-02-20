@@ -1,5 +1,7 @@
 package com.linuxwizards.simplenotesapi;
 
+import org.assertj.core.util.Arrays;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.JsonTest;
@@ -14,10 +16,24 @@ public class NoteJsonTest {
     @Autowired
     private JacksonTester<Note> json;
 
+    @Autowired
+    private JacksonTester<Note[]> jsonList;
+
+    private Note[] notes;
+
+    @BeforeEach
+    void setUp() {
+        notes = Arrays.array(
+                new Note(99L, "This is a title", "This is a note"),
+                new Note(100L, "Second title", "Second aaaa note"),
+                new Note(101L, "Another title", "Another note")
+        );
+    }
+
     @Test
     void noteSerializationTest() throws IOException {
-        Note note = new Note(99L, "This is a title", "This is a note");
-        assertThat(json.write(note)).isStrictlyEqualToJson("expected.json");
+        Note note = notes[0];
+        assertThat(json.write(note)).isStrictlyEqualToJson("single.json");
 
         assertThat(json.write(note)).hasJsonPathNumberValue("@.id");
         assertThat(json.write(note)).extractingJsonPathNumberValue("@.id")
