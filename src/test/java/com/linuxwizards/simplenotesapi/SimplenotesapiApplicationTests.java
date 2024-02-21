@@ -270,4 +270,35 @@ class SimplenotesapiApplicationTests {
 				.getForEntity("/notes/102", String.class);
 		assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
+
+	@Test
+	void loginEndpointShouldReturnOkForAuthenticatedUser() {
+		ResponseEntity<Void> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/login", Void.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		response = restTemplate
+				.withBasicAuth("kumar2", "xyz789")
+				.getForEntity("/login", Void.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
+	@Test
+	void loginEndpointShouldReturnUnauthorizedForBadCredentials() {
+		ResponseEntity<Void> response = restTemplate
+				.withBasicAuth("sarah1", "BAD-PASSWORD")
+				.getForEntity("/login", Void.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+		response = restTemplate
+				.withBasicAuth("BAD-USER", "xyz789")
+				.getForEntity("/login", Void.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+		response = restTemplate
+				.withBasicAuth("BAD-USER", "BAD-PASSWORD")
+				.getForEntity("/login", Void.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
 }

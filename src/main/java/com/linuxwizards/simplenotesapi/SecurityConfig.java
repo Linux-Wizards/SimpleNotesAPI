@@ -26,7 +26,7 @@ class SecurityConfig {
                 .cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/notes/**")
+                        .requestMatchers("/notes/**", "/login")
                         .hasRole("NOTES-USER"))
                 .httpBasic(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable());
