@@ -62,7 +62,7 @@ class NoteController {
     }
 
     @PutMapping("/{requestedId}")
-    private ResponseEntity<Void> putCashCard(@PathVariable Long requestedId, @RequestBody Note noteUpdate, Principal principal) {
+    private ResponseEntity<Void> putNote(@PathVariable Long requestedId, @RequestBody Note noteUpdate, Principal principal) {
         Note note = findNote(requestedId, principal);
 
         if (note == null) {
@@ -71,6 +71,16 @@ class NoteController {
 
         Note updatedNote = new Note(note.id(), noteUpdate.title(), noteUpdate.content(), principal.getName());
         noteRepository.save(updatedNote);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}")
+    private ResponseEntity<Void> deleteNote(@PathVariable Long id, Principal principal) {
+        if (!noteRepository.existsByIdAndOwner(id, principal.getName())) {
+            return ResponseEntity.notFound().build();
+        }
+
+        noteRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -44,7 +44,12 @@ class SecurityConfig {
                 .password(passwordEncoder.encode("qrs456"))
                 .roles("LOCKED-USER")
                 .build();
+        UserDetails kumar = users
+                .username("kumar2")
+                .password(passwordEncoder.encode("xyz789"))
+                .roles("NOTES-USER")
+                .build();
 
-        return new InMemoryUserDetailsManager(sarah, hankCantNote);
+        return new InMemoryUserDetailsManager(sarah, hankCantNote, kumar);
     }
 }
