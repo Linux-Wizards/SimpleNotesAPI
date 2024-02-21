@@ -22,7 +22,8 @@ class SecurityConfig {
                         .requestMatchers("/notes/**")
                         .hasRole("NOTES-USER"))
                 .httpBasic(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable());
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.disable());
         return http.build();
     }
 
