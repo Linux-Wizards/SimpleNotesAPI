@@ -1,7 +1,5 @@
 package com.linuxwizards.simplenotesapi;
 
-import jakarta.validation.Valid;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
