@@ -5,15 +5,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Optional;
 import java.security.Principal;
 import java.net.URI;
 import java.util.*;
@@ -27,13 +21,16 @@ class NoteController {
         this.noteRepository = noteRepository;
     }
 
+    private Note findNote(Long requestedId, Principal principal) {
+        return noteRepository.findByIdAndOwner(requestedId, principal.getName());
+    }
 
     @GetMapping("/{requestedId}")
     private ResponseEntity<Note> findById(@PathVariable Long requestedId, Principal principal) {
-        Optional<Note> noteOptional = Optional.ofNullable(noteRepository.findByIdAndOwner(requestedId, principal.getName()));
+        Note note = findNote(requestedId, principal);
 
-        if (noteOptional.isPresent()) {
-            return ResponseEntity.ok(noteOptional.get());
+        if (note != null) {
+            return ResponseEntity.ok(note);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -62,5 +59,18 @@ class NoteController {
                 .toUri();
 
         return ResponseEntity.created(locationOfNewNote).build();
+    }
+
+    @PutMapping("/{requestedId}")
+    private ResponseEntity<Void> putCashCard(@PathVariable Long requestedId, @RequestBody Note noteUpdate, Principal principal) {
+        Note note = findNote(requestedId, principal);
+
+        if (note == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Note updatedNote = new Note(note.id(), noteUpdate.title(), noteUpdate.content(), principal.getName());
+        noteRepository.save(updatedNote);
+        return ResponseEntity.noContent().build();
     }
 }

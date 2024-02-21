@@ -10,6 +10,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 
 import java.net.URI;
 
@@ -184,6 +186,53 @@ class SimplenotesapiApplicationTests {
 		ResponseEntity<String> response = restTemplate
 				.withBasicAuth("sarah1", "abc123")
 				.getForEntity("/notes/102", String.class); // kumar2's note
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
+	@DirtiesContext
+	void shouldUpdateAnExistingNote() {
+		Note noteUpdate = new Note(null, "Updated title", "Updated content", null);
+		HttpEntity<Note> request = new HttpEntity<>(noteUpdate);
+		ResponseEntity<Void> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.exchange("/notes/99", HttpMethod.PUT, request, Void.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+		ResponseEntity<String> getResponse = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/notes/99", String.class);
+		assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(getResponse.getBody());
+		Number id = documentContext.read("$.id");
+		String title = documentContext.read("$.title");
+		String content = documentContext.read("$.content");
+
+		assertThat(id).isEqualTo(99);
+		assertThat(title).isEqualTo("Updated title");
+		assertThat(content).isEqualTo("Updated content");
+	}
+
+	@Test
+	void shouldNotUpdateANoteThatDoesNotExist() {
+		Note unknownNote = new Note(null, "Random title", "Random content", null);
+		HttpEntity<Note> request = new HttpEntity<>(unknownNote);
+
+		ResponseEntity<Void> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.exchange("/notes/99999", HttpMethod.PUT, request, Void.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
+	void shouldNotUpdateANoteThatIsOwnedBySomeoneElse() {
+		Note kumarsNote = new Note(null, "New title", "New content", null);
+		HttpEntity<Note> request = new HttpEntity<>(kumarsNote);
+
+		ResponseEntity<Void> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.exchange("/notes/102", HttpMethod.PUT, request, Void.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 }
