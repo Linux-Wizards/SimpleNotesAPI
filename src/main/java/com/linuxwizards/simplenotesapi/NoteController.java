@@ -15,8 +15,8 @@ import java.util.*;
 @RestController
 @RequestMapping("/notes")
 class NoteController {
-    private static final int maxTitleLength = 50;
-    private static final int maxContentLength = 20000;
+    private static final int maxTitleLength = 30;
+    private static final int maxContentLength = 1000;
     private static final int maxOwnerLength = 255;
 
     private final NoteRepository noteRepository;
