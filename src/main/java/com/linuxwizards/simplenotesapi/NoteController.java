@@ -4,9 +4,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.security.Principal;
 import java.net.URI;
@@ -40,9 +43,9 @@ class NoteController {
     private ResponseEntity<List<Note>> findAll(Pageable pageable, Principal principal) {
         Page<Note> page = noteRepository.findByOwner(principal.getName(),
                 PageRequest.of(
-                  pageable.getPageNumber(),
-                  pageable.getPageSize(),
-                  pageable.getSortOr(Sort.by(Sort.Direction.DESC, "id"))
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        pageable.getSortOr(Sort.by(Sort.Direction.DESC, "id"))
                 ));
 
         return ResponseEntity.ok(page.getContent());
@@ -50,28 +53,38 @@ class NoteController {
 
     @PostMapping
     private ResponseEntity<Void> createNote(@RequestBody Note newNoteRequest, UriComponentsBuilder ucb, Principal principal) {
-        Note noteWithOwner = new Note(null, newNoteRequest.title(), newNoteRequest.content(), principal.getName());
-        Note savedNote = noteRepository.save(noteWithOwner);
+        try {
+            Note noteWithOwner = new Note(null, newNoteRequest.title(), newNoteRequest.content(), principal.getName());
+            Note savedNote = noteRepository.save(noteWithOwner);
 
-        URI locationOfNewNote = ucb
-                .path("notes/{id}")
-                .buildAndExpand(savedNote.id())
-                .toUri();
+            URI locationOfNewNote = ucb
+                    .path("notes/{id}")
+                    .buildAndExpand(savedNote.id())
+                    .toUri();
 
-        return ResponseEntity.created(locationOfNewNote).build();
+            return ResponseEntity.created(locationOfNewNote).build();
+        } catch (DataIntegrityViolationException e) {
+            String message = "Failed to create note: " + e.getMessage();
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PutMapping("/{requestedId}")
     private ResponseEntity<Void> putNote(@PathVariable Long requestedId, @RequestBody Note noteUpdate, Principal principal) {
-        Note note = findNote(requestedId, principal);
+        try {
+            Note note = findNote(requestedId, principal);
 
-        if (note == null) {
-            return ResponseEntity.notFound().build();
+            if (note == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Note updatedNote = new Note(note.id(), noteUpdate.title(), noteUpdate.content(), principal.getName());
+            noteRepository.save(updatedNote);
+            return ResponseEntity.noContent().build();
+        } catch (DataIntegrityViolationException e) {
+            String message = "Failed to create note: " + e.getMessage();
+            return ResponseEntity.badRequest().build();
         }
-
-        Note updatedNote = new Note(note.id(), noteUpdate.title(), noteUpdate.content(), principal.getName());
-        noteRepository.save(updatedNote);
-        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
