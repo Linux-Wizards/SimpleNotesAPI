@@ -18,6 +18,7 @@ class SecurityConfig {
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(request -> request
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/notes/**")
                         .hasRole("NOTES-USER"))
                 .httpBasic(Customizer.withDefaults())
